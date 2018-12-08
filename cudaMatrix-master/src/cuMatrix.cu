@@ -1,4 +1,4 @@
-#include "cuMatrix.hu"
+#include "cuMatrix.h"
 
 //! Populate the scope with current position
 #define ESTABLISH_CURRENT_POSITION unsigned int y, x, pos; \

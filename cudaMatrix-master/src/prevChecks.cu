@@ -1,6 +1,6 @@
-#include "prevChecks.hu"
+#include "prevChecks.h"
 
-#include "errorMacros.hu"
+#include "errorMacros.h"
 
 void checkCLIArguments(int argc, char *argv[], unsigned int *width)
 {

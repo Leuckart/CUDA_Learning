@@ -1,9 +1,9 @@
-#include "matrix.hu"
+#include "matrix.h"
 
 #include <stdio.h>
 #include <stdlib.h>
-#include "errorMacros.hu"
-#include "cuMatrix.hu"
+#include "errorMacros.h"
+#include "cuMatrix.h"
 
 void Matrix::fill()
 { 

@@ -2,9 +2,9 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "errorMacros.hu"
-#include "prevChecks.hu"
-#include "matrix.hu"
+#include "errorMacros.h"
+#include "prevChecks.h"
+#include "matrix.h"
 
 int main(int argc, char *argv[])
 {

@@ -1,7 +1,7 @@
 #ifndef _matrix_hu_
 #define _matrix_hu_
 
-#include "errorMacros.hu"
+#include "errorMacros.h"
 
 class Matrix
 {

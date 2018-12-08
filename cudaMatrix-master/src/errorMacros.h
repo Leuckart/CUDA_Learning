@@ -2,7 +2,7 @@
 #define _errorMacros_hu_
 
 #include <stdio.h>
-#include "Error.hxx"
+#include "Error.h"
 
 #define SPIT(...) \
 { \
