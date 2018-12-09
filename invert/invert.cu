@@ -13,7 +13,7 @@ float Get_Det(float *mat, int n)
 		return mat[0];
 	}
 	float ans = 0;
-	float *temp = (float *)malloc(SIZE*SIZE* sizeof(float));
+	float *temp = (float *)malloc(SIZE * SIZE * sizeof(float));
 
 	for (int i = 0; i < n; i++)
 	{
@@ -23,11 +23,11 @@ float Get_Det(float *mat, int n)
 			{
 				if (k >= i)
 				{
-					Element(temp,j,k) = Element(mat,j+1,k+1);
+					Element(temp, j, k) = Element(mat, j + 1, k + 1);
 				}
 				else
 				{
-					Element(temp,j,k)=Element(mat,j+1,k);
+					Element(temp, j, k) = Element(mat, j + 1, k);
 				}
 			}
 		}
@@ -51,7 +51,7 @@ void Get_Adj(float *arcs, int n, float *ans)
 		ans[0] = 1;
 		return;
 	}
-	float *temp = (float *)malloc(SIZE*SIZE* sizeof(float));
+	float *temp = (float *)malloc(SIZE * SIZE * sizeof(float));
 	for (int i = 0; i < n; i++)
 	{
 		for (int j = 0; j < n; j++)
@@ -62,19 +62,19 @@ void Get_Adj(float *arcs, int n, float *ans)
 				{
 					if (t >= j)
 					{
-						temp[k*SIZE+t] = arcs[(k >= i ? k + 1 : k)*SIZE+t + 1];
+						temp[k * SIZE + t] = arcs[(k >= i ? k + 1 : k) * SIZE + t + 1];
 					}
 					else
 					{
-						temp[k*SIZE+t] = arcs[(k >= i ? k + 1 : k)*SIZE+t];
+						temp[k * SIZE + t] = arcs[(k >= i ? k + 1 : k) * SIZE + t];
 					}
 				}
 			}
 
-			ans[j*SIZE+i] = Get_Det(temp, n - 1);
+			ans[j * SIZE + i] = Get_Det(temp, n - 1);
 			if ((i + j) % 2 == 1)
 			{
-				ans[j*SIZE+i] = -ans[j*SIZE+i];
+				ans[j * SIZE + i] = -ans[j * SIZE + i];
 			}
 		}
 	}
@@ -83,7 +83,7 @@ void Get_Adj(float *arcs, int n, float *ans)
 void Inverse_Matrix(float *src, float *des)
 {
 	float flag = Get_Det(src, SIZE);
-	float *t = (float *)malloc(SIZE*SIZE* sizeof(float));
+	float *t = (float *)malloc(SIZE * SIZE * sizeof(float));
 	if (0 == flag)
 	{
 		cout << "Warning : Singular Matrix !" << endl;
@@ -96,7 +96,7 @@ void Inverse_Matrix(float *src, float *des)
 		{
 			for (int j = 0; j < SIZE; j++)
 			{
-				des[i*SIZE+j]=t[i*SIZE+j]/flag;
+				des[i * SIZE + j] = t[i * SIZE + j] / flag;
 			}
 		}
 	}
@@ -107,14 +107,14 @@ void Show_Matrix(float *mat, const char *mesg)
 	cout << mesg << endl;
 
 	unsigned int mat_size = SIZE * SIZE;
-	int flag=0;
-	for(int i=0;i<SIZE;i++)
+	int flag = 0;
+	for (int i = 0; i < SIZE; i++)
 	{
-		for(int j=0;j<SIZE;j++)
+		for (int j = 0; j < SIZE; j++)
 		{
-			cout<<Element(mat,i,j)<<" ";
+			cout << Element(mat, i, j) << " ";
 		}
-		cout<<endl;
+		cout << endl;
 	}
 	cout << endl;
 }
