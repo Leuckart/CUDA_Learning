@@ -1,4 +1,5 @@
 ARCH=-gencode arch=compute_52,code=compute_52
+STD= -std=c++11
 
 VPATH=./
 SLIB=libfantasynet.so
@@ -16,16 +17,11 @@ LDFLAGS=-lm #-lcurand -lcudnn -lcublas#-pthread
 COMMON=-Iinclude/ -Isrc/
 CFLAGS=-Wall -Wno-unused-result -Wno-unknown-pragmas -Wfatal-errors -fPIC
 
-# OPENMP=0
-# DEBUG=0
-
 CFLAGS+=$(OPTS)
 
-# OPENCV=0
-# GPU=1
-COMMON+=-DGPU -I/usr/local/cuda-9.1/include/
+COMMON+=-DGPU -I/usr/local/cuda-9.0/include/
 CFLAGS+=-DGPU
-LDFLAGS+=-L/usr/local/cuda-9.1/lib64/ -lcuda -lcudart -lcublas -lcurand
+LDFLAGS+=-L/usr/local/cuda-9.0/lib64/ -lcuda -lcudart -lcublas -lcurand
 
 # CUDNN=1
 COMMON+=-DCUDNN
@@ -43,7 +39,5 @@ LDFLAGS+=-lstdc++
 # OBJS
 # DEPS
 
-#all:
-#	$(NVCC) $(ARCH) -w -o output *.cu $(LDFLAGS)
 all:
-	g++ -o invert *.cpp
+	$(NVCC) $(ARCH) $(STD) -w -o output *.cu $(LDFLAGS)
