@@ -71,7 +71,7 @@ void Get_Adj(float arcs[SIZE][SIZE], int n, float ans[SIZE][SIZE])
 				}
 			}
 
-			ans[j][i] = Get_Det(temp, n - 1); //此处顺便进行了转置
+			ans[j][i] = Get_Det(temp, n - 1);
 			if ((i + j) % 2 == 1)
 			{
 				ans[j][i] = -ans[j][i];
@@ -80,15 +80,14 @@ void Get_Adj(float arcs[SIZE][SIZE], int n, float ans[SIZE][SIZE])
 	}
 }
 
-//得到给定矩阵src的逆矩阵保存到des中。
-bool GetMatrixInverse(float src[SIZE][SIZE], int n, float des[SIZE][SIZE])
+bool Inverse_Matrix(float src[SIZE][SIZE], int n, float des[SIZE][SIZE])
 {
 	float flag = Get_Det(src, n);
 	float t[SIZE][SIZE];
 	if (0 == flag)
 	{
-		cout << "原矩阵行列式为0，无法求逆。请重新运行" << endl;
-		return false; //如果算出矩阵的行列式为0，则不往下进行
+		cout << "Warning : Singular Matrix !" << endl;
+		return true;
 	}
 	else
 	{
@@ -101,18 +100,31 @@ bool GetMatrixInverse(float src[SIZE][SIZE], int n, float des[SIZE][SIZE])
 			}
 		}
 	}
+	return false;
+}
 
-	return true;
+void Show_Matrix(float mat[SIZE][SIZE], const char *mesg)
+{
+	cout << mesg << endl;
+	for (int i = 0; i < SIZE; i++)
+	{
+		for (int j = 0; j < SIZE; j++)
+		{
+			cout << mat[i][j] << " ";
+		}
+		cout << endl;
+	}
+	cout<<endl;
 }
 
 int main()
 {
-	bool flag; //标志位，如果行列式为0，则结束程序
+	bool is_singular;
 	int row = SIZE;
 	int col = SIZE;
 	float matrix_before[SIZE][SIZE]{}; //{1,2,3,4,5,6,7,8,9};
 
-	//随机数据，可替换
+	/* should replace by urandom. Leuckart. */
 	srand((unsigned)time(0));
 	for (int i = 0; i < SIZE; i++)
 	{
@@ -122,48 +134,19 @@ int main()
 		}
 	}
 
-	cout << "原矩阵：" << endl;
-
-	for (int i = 0; i < SIZE; i++)
-	{
-		for (int j = 0; j < SIZE; j++)
-		{
-			//cout << matrix_before[i][j] <<" ";
-			cout << *(*(matrix_before + i) + j) << " ";
-		}
-		cout << endl;
-	}
+	Show_Matrix(matrix_before, "Original Matrix :");
 
 	float matrix_after[SIZE][SIZE]{};
-	flag = GetMatrixInverse(matrix_before, SIZE, matrix_after);
-	if (false == flag)
+	is_singular = Inverse_Matrix(matrix_before, SIZE, matrix_after);
+	if (true == is_singular)
 		return 0;
 
-	cout << "逆矩阵：" << endl;
+	Show_Matrix(matrix_after, "Inverse Matrix :");
 
-	for (int i = 0; i < row; i++)
-	{
-		for (int j = 0; j < col; j++)
-		{
-			cout << matrix_after[i][j] << " ";
-			//cout << *(*(matrix_after+i)+j)<<" ";
-		}
-		cout << endl;
-	}
+	float inverse_inverse_matrix[SIZE][SIZE]{};
+	Inverse_Matrix(matrix_after, SIZE, inverse_inverse_matrix);
 
-	GetMatrixInverse(matrix_after, SIZE, matrix_before);
-
-	cout << "反算的原矩阵：" << endl; //为了验证程序的精度
-
-	for (int i = 0; i < SIZE; i++)
-	{
-		for (int j = 0; j < SIZE; j++)
-		{
-			//cout << matrix_before[i][j] <<" ";
-			cout << *(*(matrix_before + i) + j) << " ";
-		}
-		cout << endl;
-	}
+	Show_Matrix(inverse_inverse_matrix, "Inverse Inverse Matrix :");
 
 	return 0;
 }
