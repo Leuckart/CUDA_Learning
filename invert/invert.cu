@@ -41,43 +41,45 @@ float Get_Det(float *mat, int n)
 			ans -= mat[i] * t;
 		}
 	}
+	free(temp);
 	return ans;
 }
 
-void Get_Adj(float *arcs, int n, float *ans)
+void Get_Adj(float *arcs, float *ans)
 {
-	if (n == 1)
+	if (SIZE == 1)
 	{
 		ans[0] = 1;
 		return;
 	}
 	float *temp = (float *)malloc(SIZE * SIZE * sizeof(float));
-	for (int i = 0; i < n; i++)
+	for (int i = 0; i < SIZE; i++)
 	{
-		for (int j = 0; j < n; j++)
+		for (int j = 0; j < SIZE; j++)
 		{
-			for (int k = 0; k < n - 1; k++)
+			for (int k = 0; k < SIZE - 1; k++)
 			{
-				for (int t = 0; t < n - 1; t++)
+				for (int t = 0; t < SIZE - 1; t++)
 				{
 					if (t >= j)
 					{
-						temp[k * SIZE + t] = arcs[(k >= i ? k + 1 : k) * SIZE + t + 1];
+						Element(temp, k, t) = Element(arcs, k >= i ? k + 1 : k, t + 1);
 					}
 					else
 					{
-						temp[k * SIZE + t] = arcs[(k >= i ? k + 1 : k) * SIZE + t];
+						Element(temp, k, t) = Element(arcs, k >= i ? k + 1 : k, t);
 					}
 				}
 			}
 
-			ans[j * SIZE + i] = Get_Det(temp, n - 1);
+			Element(ans, j, i) = Get_Det(temp, SIZE - 1);
 			if ((i + j) % 2 == 1)
 			{
-				ans[j * SIZE + i] = -ans[j * SIZE + i];
+				Element(ans, j, i) = -Element(ans, j, i);
 			}
 		}
 	}
+	free(temp);
 }
 
 void Inverse_Matrix(float *src, float *des)
@@ -91,15 +93,16 @@ void Inverse_Matrix(float *src, float *des)
 	}
 	else
 	{
-		Get_Adj(src, SIZE, t);
+		Get_Adj(src, t);
 		for (int i = 0; i < SIZE; i++)
 		{
 			for (int j = 0; j < SIZE; j++)
 			{
-				des[i * SIZE + j] = t[i * SIZE + j] / flag;
+				Element(des, i, j) = Element(t, i, j) / flag;
 			}
 		}
 	}
+	free(t);
 }
 
 void Show_Matrix(float *mat, const char *mesg)
@@ -166,5 +169,8 @@ int main()
 	//Cuda_Call(cudaMalloc((void **)&Matrix_GPU,Byte_Size));
 	/* Initial Memory Begin */
 
+	free(Matrix_Ori);
+	free(Matrix_Inv);
+	free(Matrix_Inv_Inv);
 	return 0;
 }
