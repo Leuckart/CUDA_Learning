@@ -33,6 +33,11 @@ float Get_Det(float *mat, int n)
 
 void Get_Adj(float *ori, float *adj)
 {
+	if (SIZE == 1)
+	{
+		adj[0] = 1;
+		return;
+	}
 	float *cof = (float *)malloc((SIZE - 1) * (SIZE - 1) * sizeof(float));
 	for (int i = 0; i < SIZE; i++)
 	{
@@ -103,6 +108,96 @@ void Initialize_Matrix(float *mat)
 	}
 }
 
+__device__ float Get_Det_Kernel(float *mat, int n)
+{
+	if (n == 1)
+	{
+		return mat[0];
+	}
+	float ans = 0;
+	//float *cof = (float *)malloc((n - 1) * (n - 1) * sizeof(float));
+	float *cof;
+	cudaMalloc((void **)&cof, (n-1) * (n-1) * sizeof(float));
+
+	for (int i = 0; i < n; i++)
+	{
+		for (int j = 0; j < n - 1; j++)
+		{
+			for (int k = 0; k < n - 1; k++)
+			{
+				Point(cof, j, k, n - 1) = Point(mat, j + 1, k < i ? k : k + 1, n);
+			}
+		}
+		float t = Get_Det_Kernel(cof, n - 1);
+		ans += mat[i] * t * (i % 2 == 0 ? 1 : -1);
+	}
+	//free(cof);
+	cudaFree(cof);
+	return ans;
+}
+
+__global__ void Get_Adj_Kernel(float *ori, float *adj)
+{
+	if (SIZE == 1)
+	{
+		adj[0] = 1;
+		return;
+	}
+	float *cof;
+	//cudaMalloc((void **)&cof, (SIZE-1) * (SIZE-1) * sizeof(float));
+
+	//float *cof = (float *)malloc((SIZE - 1) * (SIZE - 1) * sizeof(float));
+	for (int i = 0; i < SIZE; i++)
+	{
+		for (int j = 0; j < SIZE; j++)
+		{
+			for (int k = 0; k < SIZE - 1; k++)
+			{
+				for (int t = 0; t < SIZE - 1; t++)
+				{
+					Point(cof, k, t, SIZE - 1) = Point(ori, k < i ? k : k + 1, t < j ? t : t + 1, SIZE);
+				}
+			}
+			//Point(adj, j, i, SIZE) = Get_Det_Kernel(cof, SIZE - 1) * ((i + j) % 2 == 0 ? 1 : -1);
+		}
+	}
+	//cudaFree(cof);
+}
+
+void Inverse_Matrix_Handle(float *ori, float *inv,float det,dim3 Blocks_Per_Grid,dim3 Threads_Per_Block)
+{
+	//const unsigned int _idx=(blockIdx.x*blockDim.x)+threadIdx.x;
+	//const unsigned int _idy=(blockIdx.y*blockDim.y)+threadIdx.y;
+	//const unsigned int index=((gridDim.x*blockDim.x)*_idy)+_idx;
+	//Inverse_Matrix_Kernel<<<Blocks_Per_Grid,Threads_Per_Block>>>(Matrix_GPU,Matrix_Inv_GPU);
+
+	//float det = Get_Det(ori, SIZE);
+	//float *adj = (float *)malloc(SIZE * SIZE * sizeof(float));
+
+	float *adj;
+	Cuda_Call(cudaMalloc((void **)&adj, SIZE * SIZE * sizeof(float)));
+	if (0 == det)
+	{
+		//cout << "Warning : Singular Matrix !" << endl;
+		return;
+		//exit(1);
+	}
+	else
+	{
+		//Get_Adj_Kernel<<<Blocks_Per_Grid,Threads_Per_Block>>>(ori,inv);
+		//Get_Adj(ori, adj);
+		for (int i = 0; i < SIZE; i++)
+		{
+			for (int j = 0; j < SIZE; j++)
+			{
+				//Point(inv, i, j, SIZE) = Point(adj, i, j, SIZE) / det;
+			}
+		}
+	}
+	Cuda_Call(cudaFree(adj));
+	//free(adj);
+}
+
 int main()
 {
 	unsigned int Byte_Size = SIZE * SIZE * sizeof(float);
@@ -160,9 +255,9 @@ int main()
 		/* Initial Time Block End */
 
 		/* Kernel Function Execute Begin */
-		//float det = Get_Det(Matrix_Ori, SIZE);
+		float det = Get_Det(Matrix_Ori, SIZE);
 		//Inverse_Matrix_Kernel<<<Blocks_Per_Grid,Threads_Per_Block>>>(Matrix_GPU,Matrix_Inv_GPU);
-		//Inverse_Matrix_Handle(Matrix_GPU,Matrix_Inv_GPU,det,Blocks_Per_Grid,Threads_Per_Block);
+		Inverse_Matrix_Handle(Matrix_GPU,Matrix_Inv_GPU,det,Blocks_Per_Grid,Threads_Per_Block);
 		//Inverse_Matrix(Matrix_Ori,Matrix_Inv);
 		/* Kernel Function Execute End */
 
