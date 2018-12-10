@@ -13,7 +13,7 @@ float Get_Det(float *mat, int n)
 		return mat[0];
 	}
 	float ans = 0;
-	float *temp = (float *)malloc(SIZE * SIZE * sizeof(float));
+	float *temp = (float *)malloc((n-1) * (n-1) * sizeof(float));
 
 	for (int i = 0; i < n; i++)
 	{
@@ -21,25 +21,11 @@ float Get_Det(float *mat, int n)
 		{
 			for (int k = 0; k < n - 1; k++)
 			{
-				if (k >= i)
-				{
-					Element(temp, j, k) = Element(mat, j + 1, k + 1);
-				}
-				else
-				{
-					Element(temp, j, k) = Element(mat, j + 1, k);
-				}
+				Point(temp,j,k,n-1)=Point(mat,j+1,k<i?k:k+1,n);
 			}
 		}
 		float t = Get_Det(temp, n - 1);
-		if (i % 2 == 0)
-		{
-			ans += mat[i] * t;
-		}
-		else
-		{
-			ans -= mat[i] * t;
-		}
+		ans += mat[i] * t * (i % 2 == 0 ? 1 : -1);
 	}
 	free(temp);
 	return ans;
@@ -52,7 +38,7 @@ void Get_Adj(float *arcs, float *ans)
 		ans[0] = 1;
 		return;
 	}
-	float *temp = (float *)malloc(SIZE * SIZE * sizeof(float));
+	float *temp = (float *)malloc((SIZE-1) * (SIZE-1) * sizeof(float));
 	for (int i = 0; i < SIZE; i++)
 	{
 		for (int j = 0; j < SIZE; j++)
@@ -61,21 +47,14 @@ void Get_Adj(float *arcs, float *ans)
 			{
 				for (int t = 0; t < SIZE - 1; t++)
 				{
-					if (t >= j)
-					{
-						Element(temp, k, t) = Element(arcs, k >= i ? k + 1 : k, t + 1);
-					}
-					else
-					{
-						Element(temp, k, t) = Element(arcs, k >= i ? k + 1 : k, t);
-					}
+					Point(temp,k,t,SIZE-1)=Point(arcs,k<i?k:k+1,t<j?t:t+1,SIZE);
 				}
 			}
 
-			Element(ans, j, i) = Get_Det(temp, SIZE - 1);
+			Point(ans, j, i, SIZE) = Get_Det(temp, SIZE - 1);
 			if ((i + j) % 2 == 1)
 			{
-				Element(ans, j, i) = -Element(ans, j, i);
+				Point(ans, j, i, SIZE) = -Point(ans, j, i, SIZE);
 			}
 		}
 	}
@@ -94,11 +73,12 @@ void Inverse_Matrix(float *src, float *des)
 	else
 	{
 		Get_Adj(src, t);
+
 		for (int i = 0; i < SIZE; i++)
 		{
 			for (int j = 0; j < SIZE; j++)
 			{
-				Element(des, i, j) = Element(t, i, j) / flag;
+				Point(des, i, j, SIZE) = Point(t, i, j, SIZE) / flag;
 			}
 		}
 	}
@@ -115,7 +95,7 @@ void Show_Matrix(float *mat, const char *mesg)
 	{
 		for (int j = 0; j < SIZE; j++)
 		{
-			cout << Element(mat, i, j) << " ";
+			cout << Point(mat, i, j, SIZE) << " ";
 		}
 		cout << endl;
 	}
@@ -148,6 +128,8 @@ int main()
 	Initialize_Matrix(Matrix_Ori);
 	Show_Matrix(Matrix_Ori, "Original Matrix :");
 
+	cout<<Get_Det(Matrix_Ori,SIZE)<<endl;
+
 	float *Matrix_Inv = (float *)malloc(Byte_Size);
 	Inverse_Matrix(Matrix_Ori, Matrix_Inv);
 	Show_Matrix(Matrix_Inv, "Inverse Matrix :");
@@ -157,10 +139,10 @@ int main()
 	Show_Matrix(Matrix_Inv_Inv, "Inverse Inverse Matrix :");
 
 	/* Initial Threads Blocks Begin */
-	int thread_xdim = SIZE;
-	int thread_ydim = SIZE;
-	const dim3 Threads_Per_Block(thread_xdim, thread_ydim);
-	const dim3 Blocks_Per_Grid(1, 1);
+	//int thread_xdim = SIZE;
+	//int thread_ydim = SIZE;
+	//const dim3 Threads_Per_Block(thread_xdim, thread_ydim);
+	//const dim3 Blocks_Per_Grid(1, 1);
 	/* Initial Threads Blocks End */
 
 	/* Initial Memory Begin */
@@ -170,7 +152,7 @@ int main()
 	/* Initial Memory Begin */
 
 	free(Matrix_Ori);
-	free(Matrix_Inv);
-	free(Matrix_Inv_Inv);
+	//free(Matrix_Inv);
+	//free(Matrix_Inv_Inv);
 	return 0;
 }

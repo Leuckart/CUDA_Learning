@@ -24,8 +24,10 @@
 	}
 
 #define SIZE 8
-#define Element(_arr, _i, _j) ((_arr)[(_i)*8 + (_j)])
+#define Point(_arr, _i, _j, _size) ((_arr)[(_i) * (_size) + (_j)])
 
 using namespace std;
+
+float Get_Det(float *mat, int n);
 
 #endif
