@@ -31,8 +31,15 @@ float Get_Det(float *mat, int n)
 	return ans;
 }
 
-void Get_Adj(float *ori, float *adj)
+void Inverse_Matrix(float *ori, float *inv)
 {
+	float det = Get_Det(ori, SIZE);
+	if (0 == det)
+	{
+		cout << "Warning : Singular Matrix !" << endl;
+		exit(1);
+	}
+
 	float *cof = (float *)malloc((SIZE - 1) * (SIZE - 1) * sizeof(float));
 	for (int i = 0; i < SIZE; i++)
 	{
@@ -45,33 +52,76 @@ void Get_Adj(float *ori, float *adj)
 					Point(cof, k, t, SIZE - 1) = Point(ori, k < i ? k : k + 1, t < j ? t : t + 1, SIZE);
 				}
 			}
-			Point(adj, j, i, SIZE) = Get_Det(cof, SIZE - 1) * ((i + j) % 2 == 0 ? 1 : -1);
+			Point(inv, j, i, SIZE) = Get_Det(cof, SIZE - 1) * ((i + j) % 2 == 0 ? 1 : -1)/det;
 		}
 	}
 	free(cof);
 }
 
-void Inverse_Matrix(float *ori, float *inv)
+__device__ float Loop(float *mat,int n)
 {
-	float det = Get_Det(ori, SIZE);
-	float *adj = (float *)malloc(SIZE * SIZE * sizeof(float));
-	if (0 == det)
+	if (n == 1)
 	{
-		cout << "Warning : Singular Matrix !" << endl;
-		exit(1);
+		return mat[0];
 	}
-	else
+	float ans = 0;
+	float *cof = (float *)malloc((n - 1) * (n - 1) * sizeof(float));
+
+	for (int i = 0; i < n; i++)
 	{
-		Get_Adj(ori, inv);
-		for (int i = 0; i < SIZE; i++)
+		for (int j = 0; j < n - 1; j++)
 		{
-			for (int j = 0; j < SIZE; j++)
+			for (int k = 0; k < n - 1; k++)
 			{
-				Point(inv, i, j, SIZE) = Point(inv, i, j, SIZE) / det;
+				Point(cof, j, k, n - 1) = Point(mat, j + 1, k < i ? k : k + 1, n);
 			}
 		}
+		float t = Loop(cof, n - 1);
+		ans += mat[i] * t * (i % 2 == 0 ? 1 : -1);
 	}
-	free(adj);
+	free(cof);
+	return ans;
+}
+
+__global__ void Kernel_Function(float *ori,float *inv,float det)
+{
+	const unsigned int _idx=(blockIdx.x*blockDim.x)+threadIdx.x;
+	const unsigned int _idy=(blockIdx.y*blockDim.y)+threadIdx.y;
+	const unsigned int index=((gridDim.x*blockDim.x)*_idy)+_idx;
+
+	//inv[index]=index;
+	//inv[_idy*SIZE+_idx]=index;
+	//inv[index]=ori[index];
+
+	float *cof;
+	cof=(float *)malloc((SIZE - 1) * (SIZE - 1) * sizeof(float));
+	int i=_idy;
+	int j=_idx;
+
+	for (int k = 0; k < SIZE - 1; k++)
+	{
+		for (int t = 0; t < SIZE - 1; t++)
+		{
+			Point(cof, k, t, SIZE - 1) = Point(ori, k < i ? k : k + 1, t < j ? t : t + 1, SIZE);
+		}
+	}
+	//Point(inv, j, i, SIZE) = Get_Det_Kernel(cof, SIZE - 1) * ((i + j) % 2 == 0 ? 1 : -1)/det;
+
+	Point(inv, j, i, SIZE) = Loop(cof,SIZE-1)* ((i + j) % 2 == 0 ? 1 : -1)/det;
+	free(cof);
+}
+
+void Inverse_Matrix_Handle(float *ori, float *inv,dim3 Blocks_Per_Grid,dim3 Threads_Per_Block,float det)
+{
+	//float det = Get_Det_Kernel(ori, SIZE);
+	if (0 == det)
+	{
+		//cout << "Warning : Singular Matrix !" << endl;
+		//exit(1);
+		return;
+	}
+
+	Kernel_Function<<<Blocks_Per_Grid,Threads_Per_Block>>>(ori,inv,det);
 }
 
 void Show_Matrix(float *mat, const char *mesg)
@@ -114,12 +164,14 @@ int main()
 	cout << Get_Det(Matrix_Ori, SIZE) << endl;
 
 	float *Matrix_Inv = (float *)malloc(Byte_Size);
+	/*
 	Inverse_Matrix(Matrix_Ori, Matrix_Inv);
 	Show_Matrix(Matrix_Inv, "Inverse Matrix :");
 
 	float *Matrix_Inv_Inv = (float *)malloc(Byte_Size);
 	Inverse_Matrix(Matrix_Inv, Matrix_Inv_Inv);
 	Show_Matrix(Matrix_Inv_Inv, "Inverse Inverse Matrix :");
+	*/
 
 	/* Initial Threads Blocks Begin */
 	int thread_xdim = SIZE;
@@ -160,9 +212,9 @@ int main()
 		/* Initial Time Block End */
 
 		/* Kernel Function Execute Begin */
-		//float det = Get_Det(Matrix_Ori, SIZE);
-		//Inverse_Matrix_Kernel<<<Blocks_Per_Grid,Threads_Per_Block>>>(Matrix_GPU,Matrix_Inv_GPU);
-		//Inverse_Matrix_Handle(Matrix_GPU,Matrix_Inv_GPU,det,Blocks_Per_Grid,Threads_Per_Block);
+		float det=Get_Det(Matrix_Ori,SIZE);
+		//Inverse_Matrix_Kernel<<<Blocks_Per_Grid,Threads_Per_Block>>(Matrix_GPU,Matrix_Inv_GPU);
+		Inverse_Matrix_Handle(Matrix_GPU,Matrix_Inv_GPU,Blocks_Per_Grid,Threads_Per_Block,det);
 		//Inverse_Matrix(Matrix_Ori,Matrix_Inv);
 		/* Kernel Function Execute End */
 

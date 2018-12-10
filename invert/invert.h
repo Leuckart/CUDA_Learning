@@ -22,7 +22,6 @@
 			exit(1);                                                              \
 		}                                                                         \
 	}
-
 #define SIZE 5
 #define Point(_arr, _i, _j, _size) ((_arr)[(_i) * (_size) + (_j)])
 
