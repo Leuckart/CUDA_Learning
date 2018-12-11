@@ -105,6 +105,7 @@ __global__ void Kernel_Function(float *ori,float *inv,float det)
 			Point(cof, k, t, SIZE - 1) = Point(ori, k < i ? k : k + 1, t < j ? t : t + 1, SIZE);
 		}
 	}
+	
 	//Point(inv, j, i, SIZE) = Get_Det_Kernel(cof, SIZE - 1) * ((i + j) % 2 == 0 ? 1 : -1)/det;
 
 	Point(inv, j, i, SIZE) = Loop(cof,SIZE-1)* ((i + j) % 2 == 0 ? 1 : -1)/det;
