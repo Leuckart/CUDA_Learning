@@ -22,11 +22,11 @@
 			exit(1);                                                              \
 		}                                                                         \
 	}
-#define SIZE 9
+#define SIZE 8
 #define Point(_arr, _i, _j, _size) ((_arr)[(_i) * (_size) + (_j)])
 
 using namespace std;
 
-float Get_Det(float *mat, int n);
+double Get_Det(double *mat, int n);
 
 #endif
