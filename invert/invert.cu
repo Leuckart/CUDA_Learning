@@ -80,6 +80,7 @@ __global__ void Row_Kernel_Function(double *ori,double *inv,int now)
 		Point(ori,idx,idy,SIZE)-=Point(ori,now,idy,SIZE)*temp;
 		Point(inv,idx,idy,SIZE)-=Point(inv,now,idy,SIZE)*temp;
 	}
+	__syncthreads();
 
 	/*
 	__shared__ double memory[SIZE];
@@ -113,11 +114,13 @@ __global__ void Row_Kernel_Normalize(double *ori,double *inv)
 	{
 		return;
 	}
-	
+
 	double temp=1./Point(ori,idx,idx,SIZE);
 	Point(ori,idx,idy,SIZE)*=temp;
 	Point(inv,idx,idy,SIZE)*=temp;
+	__syncthreads();
 
+	//Point(inv,idx,idy,SIZE)=idx*1000+idy;
 	/*
 	__shared__ double head[SIZE];
 	if(idy==0)
@@ -144,7 +147,6 @@ void Row_Function(double *ori,double *inv,int now)
 			continue;
 		}
 		temp=Point(ori,i,now,SIZE)/ii;
-		//temp=ii/Point(ori,i,now,SIZE);
 		for(int j=0;j<SIZE;j++)
 		{
 			Point(ori,i,j,SIZE)-=Point(ori,now,j,SIZE)*temp;
@@ -160,7 +162,7 @@ void Row_Normalize(double *ori,double *inv)
 		double temp=1./Point(ori,i,i,SIZE);
 		for(int j=0;j<SIZE;j++)
 		{
-			Point(ori,i,j,SIZE)*=temp;
+			//Point(ori,i,j,SIZE)*=temp;
 			Point(inv,i,j,SIZE)*=temp;
 		}
 	}
@@ -205,8 +207,11 @@ void Show_Matrix(double *mat, const char *mesg)
 			{
 				cout << Point(mat, i, j, SIZE) << " ";
 			}
+			//if(int(Point(mat,i,j,SIZE))!=int((i==j)))
+			//	cout<<i<<" "<<j<<" "<<float(Point(mat,i,j,SIZE))<<endl;
 		}
 		cout << endl;
+		//break;//Leuckart.
 	}
 	cout << endl;
 }
@@ -219,7 +224,7 @@ void Initialize_Matrix(double *mat)
 
 	for (int i = 0; i < mat_size; i++)
 	{
-		mat[i] = rand() % 100 * 0.001;
+		mat[i] = rand() % 100 * 0.01;
 	}
 }
 
@@ -253,10 +258,6 @@ int main()
 	//Inverse_Matrix(Matrix_Ori, Matrix_Inv);
 	//Show_Matrix(Matrix_Inv, "Inverse Matrix :");
 
-	double *Matrix_Inv_Inv = (double *)malloc(Byte_Size);
-	//Inverse_Matrix(Matrix_Inv, Matrix_Inv_Inv);
-	//Show_Matrix(Matrix_Inv_Inv, "Inverse Inverse Matrix :");
-
 	/* Initial Threads Blocks Begin */
 	int thread_xdim = 32;
 	int thread_ydim = 32;
@@ -276,9 +277,6 @@ int main()
 	Cuda_Call(cudaMalloc((void **)&Matrix_GPU, Byte_Size));
 	Cuda_Call(cudaMalloc((void **)&Matrix_Inv_GPU, Byte_Size));
 	Cuda_Call(cudaMalloc((void **)&Matrix_Inv_Inv_GPU, Byte_Size));
-	Cuda_Call(cudaMemcpy(Matrix_GPU, Matrix_Ori, Byte_Size, cudaMemcpyHostToDevice));
-	Cuda_Call(cudaMemcpy(Matrix_Inv_GPU, ident, Byte_Size, cudaMemcpyHostToDevice));
-	Cuda_Call(cudaMemcpy(Matrix_Inv_Inv_GPU, ident, Byte_Size, cudaMemcpyHostToDevice));
 	/* Initial Memory Begin */
 
 	/* Test On Every Device Begin */
@@ -305,18 +303,17 @@ int main()
 		/* Initial Time Block End */
 
 		/* Kernel Function Execute Begin */
+		Cuda_Call(cudaMemcpy(Matrix_GPU, Matrix_Ori, Byte_Size, cudaMemcpyHostToDevice));
+		Cuda_Call(cudaMemcpy(Matrix_Inv_GPU, ident, Byte_Size, cudaMemcpyHostToDevice));
 		Inverse_Matrix_Kernel_Handle(Matrix_GPU,Matrix_Inv_GPU,Blocks_Per_Grid,Threads_Per_Block);
+		Cuda_Call(cudaMemcpy(Matrix_Inv, Matrix_Inv_GPU, Byte_Size, cudaMemcpyDeviceToHost));
+		//Show_Matrix(Matrix_Inv,"\n\n\n1\n\n\n");
 
 		//double *Matrix_Ori_Copy=(double *)malloc(Byte_Size);
 		//memcpy(Matrix_Ori_Copy,Matrix_Ori,Byte_Size);
 		//Inverse_Matrix_Handle(Matrix_Ori_Copy,ident);
+		//Show_Matrix(ident,"\n\n\n1\n\n\n");
 
-		/*for(int i=0;i<SIZE;i++)
-		{
-			Point(ident,i,i,SIZE)=1;
-		}*/
-		//Inverse_Matrix_Kernel_Handle(Matrix_Inv_GPU,Matrix_Inv_Inv_GPU,Blocks_Per_Grid,Threads_Per_Block);
-		//Inverse_Matrix(Matrix_Ori,Matrix_Inv);
 		/* Kernel Function Execute End */
 
 		/* Time Clock Begin */
@@ -330,24 +327,18 @@ int main()
 	}
 
 	/* Copy GPU To CPU Begin */
-	//Cuda_Call(cudaMemcpy(Matrix_Inv, Matrix_Inv_GPU, Byte_Size, cudaMemcpyDeviceToHost));
 	//Cuda_Call(cudaMemcpy(Matrix_Ori, Matrix_GPU, Byte_Size, cudaMemcpyDeviceToHost));
-	//Cuda_Call(cudaMemcpy(Matrix_Inv_Inv, Matrix_Inv_Inv_GPU, Byte_Size, cudaMemcpyDeviceToHost));
+	//Show_Matrix(Matrix_Ori,"...");
 	/* Copy GPU To CPU End */
 
-	//Show_Matrix(Matrix_Ori, "Original Matrix (Should Be I):");
-	//Show_Matrix(Matrix_Inv, "Inv Matrix :");
-	//Show_Matrix(Matrix_Inv_Inv, "Inv Inv Matrix :");
-
 	double *Matrix_Res = (double *)malloc(Byte_Size);
-	//Matrix_Mult(Matrix_Ori,Matrix_Inv,Matrix_Res);
-	//Matrix_Mult(Matrix_Ori,ident,Matrix_Res);
-
-	//Show_Matrix(Matrix_Res, "Mult Matrix :");
+	Matrix_Mult(Matrix_Ori,Matrix_Inv,Matrix_Res);
+	Show_Matrix(Matrix_Res, "Mult Matrix :");
 
 	/* Free Memory Begin */
 	Cuda_Call(cudaFree(Matrix_GPU));
 	free(Matrix_Ori);
+	//free(Matrix_Res);
 	/* Free Memory End */
 	return 0;
 }

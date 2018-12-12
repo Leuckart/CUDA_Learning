@@ -23,12 +23,11 @@
 		}                                                                         \
 	}
 // if a thread block has too many thread, result will be wrong, this limit is 1024.
-// if block num >1, shared memory should be broadcast.
-#define SIZE 1500
+// if block num 1, shared memory should be broadcast
+#define SIZE 161
 #define Point(_arr, _i, _j, _size) ((_arr)[(_i) * (_size) + (_j)])
 
 using namespace std;
-
 double Get_Det(double *mat, int n);
 
 #endif
