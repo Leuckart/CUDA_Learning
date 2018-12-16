@@ -67,7 +67,7 @@ __global__ void Row_Kernel_Function(double *ori, double *inv, int now)
 	const unsigned int idx = thread_idx / SIZE;
 	const unsigned int idy = thread_idx % SIZE;
 
-	if((idx<SIZE)&&(idy<SIZE))
+	if ((idx < SIZE) && (idy < SIZE))
 	{
 		double ii = Element(ori, now, now);
 		double temp = 0.0;
@@ -114,7 +114,7 @@ __global__ void Row_Kernel_Normalize(double *ori, double *inv)
 	const unsigned int idx = thread_idx / SIZE;
 	const unsigned int idy = thread_idx % SIZE;
 
-	if((idx<SIZE)&&(idy<SIZE))
+	if ((idx < SIZE) && (idy < SIZE))
 	{
 
 		double temp = 1. / Element(ori, idx, idx);
@@ -170,7 +170,7 @@ void Row_Normalize(double *ori, double *inv)
 
 void Inverse_Matrix_Handle(double *ori, double *inv)
 {
-	
+
 	for (int i = 0; i < SIZE; i++)
 	{
 		Row_Function(ori, inv, i);
@@ -180,7 +180,7 @@ void Inverse_Matrix_Handle(double *ori, double *inv)
 
 void Inverse_Matrix_Kernel_Handle(double *ori, double *inv, dim3 Blocks_Per_Grid, dim3 Threads_Per_Block)
 {
-	
+
 	for (int i = 0; i < SIZE; i++)
 	{
 		Row_Kernel_Function<<<Blocks_Per_Grid, Threads_Per_Block>>>(ori, inv, i);
@@ -328,7 +328,7 @@ int main()
 	/* Copy GPU To CPU End */
 
 	double *Matrix_Res = (double *)malloc(Byte_Size);
-	Matrix_Mult(Matrix_Ori,Matrix_Inv,Matrix_Res);
+	Matrix_Mult(Matrix_Ori, Matrix_Inv, Matrix_Res);
 	////Matrix_Mult(Matrix_Ori,ident,Matrix_Res);
 	//Show_Matrix(Matrix_Res, "Mult Matrix :");
 
