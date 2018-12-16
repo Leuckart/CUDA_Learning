@@ -66,6 +66,32 @@ __global__ void Row_Kernel_Function(double *ori, double *inv, int now)
 
 	const unsigned int idx = thread_idx / SIZE;
 	const unsigned int idy = thread_idx % SIZE;
+
+	/*
+	if(idy==0)
+	{
+		double ii = Point(ori, now, now, SIZE);
+		double temp = 0.0;
+		//for (int i = 0; i < SIZE; i++)
+		//{
+			int i=idx;
+			if (i != now)
+			{
+			//	continue;
+			//}
+			temp = Point(ori, i, now, SIZE) / ii;
+			for (int j = 0; j < SIZE; j++)
+			{
+				Point(ori, i, j, SIZE) -= Point(ori, now, j, SIZE) * temp;
+				Point(inv, i, j, SIZE) -= Point(inv, now, j, SIZE) * temp;
+			}
+
+			}
+		//}
+	}
+	*/
+
+	//*
 	//if(idx>=SIZE||idy>=SIZE)
 	if (thread_idx < SIZE * SIZE)
 	{
@@ -83,6 +109,7 @@ __global__ void Row_Kernel_Function(double *ori, double *inv, int now)
 			Point(inv, idx, idy, SIZE) -= Point(inv, now, idy, SIZE) * temp;
 		}
 	}
+	//*/
 	__syncthreads();
 
 	/*
@@ -113,6 +140,24 @@ __global__ void Row_Kernel_Normalize(double *ori, double *inv)
 
 	const unsigned int idx = thread_idx / SIZE;
 	const unsigned int idy = thread_idx % SIZE;
+
+	/*
+	if(idy==0)
+	{
+		//for (int i = 0; i < SIZE; i++)
+		//{
+			int i=idx;
+			double temp = 1. / Point(ori, i, i, SIZE);
+			for (int j = 0; j < SIZE; j++)
+			{
+				//Point(ori,i,j,SIZE)*=temp;
+				Point(inv, i, j, SIZE) *= temp;
+			}
+		//}
+	}
+	*/
+
+	//*
 	//if(idx>=SIZE||idy>=SIZE)
 	if (thread_idx < SIZE * SIZE)
 	{
@@ -121,6 +166,7 @@ __global__ void Row_Kernel_Normalize(double *ori, double *inv)
 		Point(ori, idx, idy, SIZE) *= temp;
 		Point(inv, idx, idy, SIZE) *= temp;
 	}
+	//*/
 	__syncthreads();
 		
 	//Point(inv,idx,idy,SIZE)=idx*1000+idy;
@@ -302,8 +348,9 @@ int main()
 		Point(ident, i, i, SIZE) = 1;
 	}
 	Cuda_Call(cudaMalloc((void **)&Matrix_GPU, Byte_Size));
+	//Cuda_Call(cudaMalloc((void **)&Matrix_Inv_Inv_GPU, Byte_Size));
 	Cuda_Call(cudaMalloc((void **)&Matrix_Inv_GPU, Byte_Size));
-	Cuda_Call(cudaMalloc((void **)&Matrix_Inv_Inv_GPU, Byte_Size));
+	//Cuda_Call(cudaMalloc((void **)&Matrix_Inv_Inv_GPU, Byte_Size));
 	/* Initial Memory Begin */
 
 	/* Test On Every Device Begin */
@@ -336,9 +383,9 @@ int main()
 		Cuda_Call(cudaMemcpy(Matrix_Inv, Matrix_Inv_GPU, Byte_Size, cudaMemcpyDeviceToHost));
 		//Show_Matrix(Matrix_Inv, "");
 
-		double *Matrix_Ori_Copy = (double *)malloc(Byte_Size);
-		memcpy(Matrix_Ori_Copy, Matrix_Ori, Byte_Size);
-		Inverse_Matrix_Handle(Matrix_Ori_Copy, ident);
+		//double *Matrix_Ori_Copy = (double *)malloc(Byte_Size);
+		//memcpy(Matrix_Ori_Copy, Matrix_Ori, Byte_Size);
+		//Inverse_Matrix_Handle(Matrix_Ori_Copy, ident);
 		//Show_Matrix(ident, "");
 
 		/* Kernel Function Execute End */

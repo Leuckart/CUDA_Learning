@@ -67,26 +67,6 @@ __global__ void Row_Kernel_Function(double *ori, double *inv, int now)
 	const unsigned int idx = thread_idx / SIZE;
 	const unsigned int idy = thread_idx % SIZE;
 
-	if(idx==0&&idy==0)
-	{
-		double ii = Point(ori, now, now, SIZE);
-		double temp = 0.0;
-		for (int i = 0; i < SIZE; i++)
-		{
-			if (i == now)
-			{
-				continue;
-			}
-			temp = Point(ori, i, now, SIZE) / ii;
-			for (int j = 0; j < SIZE; j++)
-			{
-				Point(ori, i, j, SIZE) -= Point(ori, now, j, SIZE) * temp;
-				Point(inv, i, j, SIZE) -= Point(inv, now, j, SIZE) * temp;
-			}
-		}
-	}
-
-	/*
 	//if(idx>=SIZE||idy>=SIZE)
 	if (thread_idx < SIZE * SIZE)
 	{
@@ -104,7 +84,6 @@ __global__ void Row_Kernel_Function(double *ori, double *inv, int now)
 			Point(inv, idx, idy, SIZE) -= Point(inv, now, idy, SIZE) * temp;
 		}
 	}
-	*/
 	__syncthreads();
 
 	/*
@@ -136,20 +115,6 @@ __global__ void Row_Kernel_Normalize(double *ori, double *inv)
 	const unsigned int idx = thread_idx / SIZE;
 	const unsigned int idy = thread_idx % SIZE;
 
-	if(idx==0&&idy==0)
-	{
-		for (int i = 0; i < SIZE; i++)
-		{
-			double temp = 1. / Point(ori, i, i, SIZE);
-			for (int j = 0; j < SIZE; j++)
-			{
-				//Point(ori,i,j,SIZE)*=temp;
-				Point(inv, i, j, SIZE) *= temp;
-			}
-		}
-	}
-
-	/*
 	//if(idx>=SIZE||idy>=SIZE)
 	if (thread_idx < SIZE * SIZE)
 	{
@@ -158,7 +123,6 @@ __global__ void Row_Kernel_Normalize(double *ori, double *inv)
 		Point(ori, idx, idy, SIZE) *= temp;
 		Point(inv, idx, idy, SIZE) *= temp;
 	}
-	*/
 	__syncthreads();
 		
 	//Point(inv,idx,idy,SIZE)=idx*1000+idy;
@@ -215,12 +179,7 @@ void Inverse_Matrix_Handle(double *ori, double *inv)
 	for (int i = 0; i < SIZE; i++)
 	{
 		Row_Function(ori, inv, i);
-		//Row_Function(ori, inv, SIZE-1-i);
-		//if (i == 115)
-		//	break;
 	}
-	
-	//Row_Function(ori,inv,115);
 	Row_Normalize(ori, inv);
 }
 
@@ -231,21 +190,8 @@ void Inverse_Matrix_Kernel_Handle(double *ori, double *inv, dim3 Blocks_Per_Grid
 	{
 		Row_Kernel_Function<<<Blocks_Per_Grid, Threads_Per_Block>>>(ori, inv, i);
 		cudaThreadSynchronize();
-		//Row_Kernel_Function<<<Blocks_Per_Grid, Threads_Per_Block>>>(ori, inv, SIZE-1-i);
-		//cudaThreadSynchronize();
-		//if (i == 115)
-		//	break;
 	}
-	
-	//Row_Kernel_Function<<<Blocks_Per_Grid, Threads_Per_Block>>>(ori, inv, 115);
-	/*
-	for (int i = 115; i < SIZE; i++)
-	{
-		Row_Kernel_Function<<<Blocks_Per_Grid, Threads_Per_Block>>>(ori, inv, i);
-		if (i == 115)
-			break;
-	}
-	*/
+
 	Row_Kernel_Normalize<<<Blocks_Per_Grid, Threads_Per_Block>>>(ori, inv);
 	cudaThreadSynchronize();
 }
@@ -253,9 +199,6 @@ void Inverse_Matrix_Kernel_Handle(double *ori, double *inv, dim3 Blocks_Per_Grid
 void Show_Matrix(double *mat, const char *mesg)
 {
 	cout << mesg << endl;
-
-	unsigned int mat_size = SIZE * SIZE;
-	int flag = 0;
 	for (int i = 0; i < SIZE; i++)
 	{
 		for (int j = 0; j < SIZE; j++)
@@ -270,13 +213,8 @@ void Show_Matrix(double *mat, const char *mesg)
 			{
 				cout << Point(mat, i, j, SIZE) << " ";
 			}
-			//if(int(Point(mat,i,j,SIZE))!=int((i==j)))
-			//	cout<<i<<" "<<j<<" "<<float(Point(mat,i,j,SIZE))<<endl;
-			//if (j > 10)
-			//	break; //Leuckart
 		}
 		cout << endl;
-		//break; //Leuckart.
 	}
 	cout << endl;
 }
@@ -333,15 +271,15 @@ int main()
 	/* Initial Memory Begin */
 	double *Matrix_GPU;
 	double *Matrix_Inv_GPU;
-	double *Matrix_Inv_Inv_GPU;
 	double *ident = (double *)malloc(Byte_Size);
 	for (int i = 0; i < SIZE; i++)
 	{
 		Point(ident, i, i, SIZE) = 1;
 	}
 	Cuda_Call(cudaMalloc((void **)&Matrix_GPU, Byte_Size));
+	//Cuda_Call(cudaMalloc((void **)&Matrix_Inv_Inv_GPU, Byte_Size));
 	Cuda_Call(cudaMalloc((void **)&Matrix_Inv_GPU, Byte_Size));
-	Cuda_Call(cudaMalloc((void **)&Matrix_Inv_Inv_GPU, Byte_Size));
+	//Cuda_Call(cudaMalloc((void **)&Matrix_Inv_Inv_GPU, Byte_Size));
 	/* Initial Memory Begin */
 
 	/* Test On Every Device Begin */
@@ -368,15 +306,15 @@ int main()
 		/* Initial Time Block End */
 
 		/* Kernel Function Execute Begin */
-		Cuda_Call(cudaMemcpy(Matrix_GPU, Matrix_Ori, Byte_Size, cudaMemcpyHostToDevice));
-		Cuda_Call(cudaMemcpy(Matrix_Inv_GPU, ident, Byte_Size, cudaMemcpyHostToDevice));
-		Inverse_Matrix_Kernel_Handle(Matrix_GPU, Matrix_Inv_GPU, Blocks_Per_Grid, Threads_Per_Block);
-		Cuda_Call(cudaMemcpy(Matrix_Inv, Matrix_Inv_GPU, Byte_Size, cudaMemcpyDeviceToHost));
+		//Cuda_Call(cudaMemcpy(Matrix_GPU, Matrix_Ori, Byte_Size, cudaMemcpyHostToDevice));
+		//Cuda_Call(cudaMemcpy(Matrix_Inv_GPU, ident, Byte_Size, cudaMemcpyHostToDevice));
+		//Inverse_Matrix_Kernel_Handle(Matrix_GPU, Matrix_Inv_GPU, Blocks_Per_Grid, Threads_Per_Block);
+		//Cuda_Call(cudaMemcpy(Matrix_Inv, Matrix_Inv_GPU, Byte_Size, cudaMemcpyDeviceToHost));
 		//Show_Matrix(Matrix_Inv, "");
 
-		//double *Matrix_Ori_Copy = (double *)malloc(Byte_Size);
-		//memcpy(Matrix_Ori_Copy, Matrix_Ori, Byte_Size);
-		//Inverse_Matrix_Handle(Matrix_Ori_Copy, ident);
+		double *Matrix_Ori_Copy = (double *)malloc(Byte_Size);
+		memcpy(Matrix_Ori_Copy, Matrix_Ori, Byte_Size);
+		Inverse_Matrix_Handle(Matrix_Ori_Copy, ident);
 		//Show_Matrix(ident, "");
 
 		/* Kernel Function Execute End */
@@ -396,32 +334,10 @@ int main()
 	//Show_Matrix(Matrix_Ori,"...");
 	/* Copy GPU To CPU End */
 
-	double *Matrix_Res = (double *)malloc(Byte_Size);
-	Matrix_Mult(Matrix_Ori,Matrix_Inv,Matrix_Res);
-	//Matrix_Mult(Matrix_Ori,ident,Matrix_Res);
+	//double *Matrix_Res = (double *)malloc(Byte_Size);
+	//Matrix_Mult(Matrix_Ori,Matrix_Inv,Matrix_Res);
+	////Matrix_Mult(Matrix_Ori,ident,Matrix_Res);
 	//Show_Matrix(Matrix_Res, "Mult Matrix :");
-
-	/*int flag;
-	for(int i=0;i<SIZE;i++)
-	{
-		flag=0;
-		for(int j=0;j<SIZE;j++)
-		{
-			if((Point(Matrix_Ori,i,j,SIZE)>0.99)&&(Point(Matrix_Ori,i,j,SIZE)<1.01))
-			{
-				flag++;
-				if(i!=j)
-				{
-					cout<<"Error : "<<i<<" , "<<j<<endl;
-				}
-			}
-		}
-		if(flag>1)
-		{
-			cout<<"Error : "<<i<<endl;
-		}
-		cout<<flag<<endl;
-	}*/
 
 	/* Free Memory Begin */
 	Cuda_Call(cudaFree(Matrix_GPU));
