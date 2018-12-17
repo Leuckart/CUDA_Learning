@@ -80,29 +80,6 @@ __global__ void Row_Kernel_Function(double *ori, double *inv, int now)
 		}
 	}
 	__syncthreads();
-
-	/*
-	__shared__ double memory[SIZE];
-	if((idx<SIZE)&&(idy<SIZE)&&(idy==0))
-	{
-		memory[idx]=Element(ori,idx,idx);
-	}
-	__syncthreads();
-
-	if((idx<SIZE)&&(idy<SIZE))
-	{
-		double ii=memory[now];
-		double temp=0.0;
-
-		if(idx!=now)
-		{
-			temp=Element(ori,idx,now)/ii;
-			Element(ori,idx,idy)-=Element(ori,now,idy)*temp;
-			Element(inv,idx,idy)-=Element(inv,now,idy)*temp;
-		}
-	}
-	__syncthreads();
-	*/
 }
 
 __global__ void Row_Kernel_Normalize(double *ori, double *inv)
@@ -116,24 +93,11 @@ __global__ void Row_Kernel_Normalize(double *ori, double *inv)
 
 	if ((idx < SIZE) && (idy < SIZE))
 	{
-
 		double temp = 1. / Element(ori, idx, idx);
 		Element(ori, idx, idy) *= temp;
 		Element(inv, idx, idy) *= temp;
 	}
 	__syncthreads();
-	/*
-	__shared__ double head[SIZE];
-	if(idy==0)
-	{
-		head[idx]=1./Element(ori,idx,idx);
-	}
-	__syncthreads();
-
-	Element(ori,idx,idy)*=head[idx];
-	Element(inv,idx,idy)*=head[idx];
-	*/
-	//__syncthreads();
 }
 
 void Row_Function(double *ori, double *inv, int now)
@@ -170,7 +134,6 @@ void Row_Normalize(double *ori, double *inv)
 
 void Inverse_Matrix_Handle(double *ori, double *inv)
 {
-
 	for (int i = 0; i < SIZE; i++)
 	{
 		Row_Function(ori, inv, i);
@@ -180,7 +143,6 @@ void Inverse_Matrix_Handle(double *ori, double *inv)
 
 void Inverse_Matrix_Kernel_Handle(double *ori, double *inv, dim3 Blocks_Per_Grid, dim3 Threads_Per_Block)
 {
-
 	for (int i = 0; i < SIZE; i++)
 	{
 		Row_Kernel_Function<<<Blocks_Per_Grid, Threads_Per_Block>>>(ori, inv, i);
