@@ -40,4 +40,4 @@ LDFLAGS+=-lstdc++
 # DEPS
 
 all:
-	$(NVCC) $(ARCH) $(STD) -w -o output *.cu $(LDFLAGS)
+	$(NVCC) $(ARCH) $(STD) -w -o inverse_adj_cpu invert_v1.cu $(LDFLAGS)
