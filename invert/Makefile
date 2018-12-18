@@ -40,4 +40,7 @@ LDFLAGS+=-lstdc++
 # DEPS
 
 all:
-	$(NVCC) $(ARCH) $(STD) -w -o inverse_adj_cpu invert_v1.cu $(LDFLAGS)
+	$(NVCC) $(ARCH) $(STD) -w -o inverse_adj_cpu inverse_v1.cu utils.cu $(LDFLAGS)
+	$(NVCC) $(ARCH) $(STD) -w -o inverse_adj_gpu inverse_v2.cu utils.cu $(LDFLAGS)
+	$(NVCC) $(ARCH) $(STD) -w -o inverse_gau_cpu inverse_v3.cu utils.cu $(LDFLAGS)
+	$(NVCC) $(ARCH) $(STD) -w -o inverse_gau_gpu inverse_v4.cu utils.cu $(LDFLAGS)

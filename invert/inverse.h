@@ -3,8 +3,8 @@
 	> Author:     Leuckart
 	> Time:       2018-12-09 19:25
 **************************************************/
-#ifndef INVERT_H_
-#define INVERT_H_
+#ifndef INVERSE_H_
+#define INVERSE_H_
 
 #include <iostream>
 #include <ctime>
@@ -23,11 +23,15 @@
 		}                                                                         \
 	}
 // if a thread block has too many thread, result will be wrong, this limit is 1024.
-// if block num 1, shared memory should be broadcast
-#define SIZE 3
+// if block num , sared memory should be broadcast
+#define SIZE 20
 #define Point(_arr, _i, _j, _size) ((_arr)[(_i) * (_size) + (_j)])
 #define Element(_arr, _i, _j) ((_arr)[(_i) * (SIZE) + (_j)])
 using namespace std;
 double Get_Det(double *mat, int n);
+
+void Show_Matrix(double *mat, const char *mesg);
+void Matrix_Mult(double *a, double *b, double *res);
+void Initialize_Matrix(double *mat);
 
 #endif
