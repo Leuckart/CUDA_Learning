@@ -13,15 +13,16 @@
 
 using namespace std;
 
-#define M 5
-#define N 3
+#define M 2
+#define N 2
 #define BYTE 128
 
-void Display(float *array, int row, int col)
+template <typename T>
+void Display(T *array, int row, int col)
 {
 	for (int i = 0; i < row * col; i++)
 	{
-		cout << array[i] << " ";
+		cout << static_cast<int32_t>(array[i]) << " ";
 		if ((i + 1) % col == 0)
 			cout << endl;
 	}
@@ -34,159 +35,65 @@ int main()
 	int8_t *h_B = (int8_t *)malloc(N * M * sizeof(int8_t));
 	int32_t *h_C = (int32_t *)malloc(M * M * sizeof(int32_t));
 
-	float *f_A = (float *)malloc(N * M * sizeof(float));
-	float *f_B = (float *)malloc(N * M * sizeof(float));
 	for (int i = 0; i < N * M; i++)
 	{
-		f_A[i] = (float)(rand() % 5);
-		f_B[i] = (float)(rand() % 5);
+		h_A[i] = (int8_t)(rand() % 5);
+		h_B[i] = (int8_t)(rand() % 5);
 	}
+	//cout << h_A[0] << endl;
+	Display(h_A, M, N);
+	Display(h_B, N, M);
 
-	for (int i = 0; i < N * M; i++)
-	{
-		h_A[i] = (char)(round(f_A[i] * BYTE));
-		h_B[i] = (char)(round(f_B[i] * BYTE));
-	}
-
-	// 创建并初始化 CUBLAS 库对象
 	cublasHandle_t handle;
 	cublasStatus_t status = cublasCreate(&handle);
-	/*
+
 	if (status != CUBLAS_STATUS_SUCCESS)
 	{
 		if (status == CUBLAS_STATUS_NOT_INITIALIZED)
 		{
-			cout << "CUBLAS 对象实例化出错" << endl;
+			cout << "Initialization Error." << endl;
 		}
-		getchar();
 		return EXIT_FAILURE;
 	}
 
-	char *d_A, *d_B;
-	int *d_C;
-	// 在 显存 中为将要计算的矩阵开辟空间
-	cudaMalloc(
-		(void **)&d_A,		 // 指向开辟的空间的指针
-		N * M * sizeof(char) //　需要开辟空间的字节数
-	);
-	cudaMalloc(
-		(void **)&d_B,
-		N * M * sizeof(char));
+	int8_t *d_A, *d_B;
+	int32_t *d_C;
+	cudaMalloc((void **)&d_A, N * M * sizeof(int8_t));
+	cudaMalloc((void **)&d_B, N * M * sizeof(int8_t));
+	cudaMalloc((void **)&d_C, M * M * sizeof(int32_t));
 
-	// 在 显存 中为将要存放运算结果的矩阵开辟空间
-	cudaMalloc(
-		(void **)&d_C,
-		M * M * sizeof(int));
+	cublasSetVector(N * M, sizeof(int8_t), h_A, 1, d_A, 1);
+	cublasSetVector(N * M, sizeof(int8_t), h_B, 1, d_B, 1);
+	//cudaMemcpy(d_A, h_A, sizeof(char) * N * M, cudaMemcpyHostToDevice);
+	//cudaMemcpy(d_B, h_B, sizeof(char) * N * M, cudaMemcpyHostToDevice);
 
-	// 将矩阵数据传递进 显存 中已经开辟好了的空间
-	cublasSetVector(
-		N * M,		  // 要存入显存的元素个数
-		sizeof(char), // 每个元素大小
-		h_A,		  // 主机端起始地址
-		1,			  // 连续元素之间的存储间隔
-		d_A,		  // GPU 端起始地址
-		1			  // 连续元素之间的存储间隔
-	);
-	//注意：当矩阵过大时，使用cudaMemcpy是更好地选择：
-	//cudaMemcpy(d_A, h_A, sizeof(char)*N*M, cudaMemcpyHostToDevice);
+	cudaDeviceSynchronize();
 
-	cublasSetVector(
-		N * M,
-		sizeof(char),
-		h_B,
-		1,
-		d_B,
-		1);
-	//cudaMemcpy(d_B, h_B, sizeof(char)*N*M, cudaMemcpyHostToDevice);
-	// 同步函数
-	cudaThreadSynchronize();
+	int8_t a = 1, b = 0;
+	cout << "OK" << endl;
+	cublasGemmEx(handle, CUBLAS_OP_T, CUBLAS_OP_T,
+										  M, M, N,
+										  &a,
+										  d_A, CUDA_R_8I, M,
+										  d_B, CUDA_R_8I, N,
+										  &b,
+										  d_C, CUDA_R_32I, M,
+										  CUDA_R_32I,
+										  CUBLAS_GEMM_ALGO0);
+	cudaDeviceSynchronize();
+	cublasGetVector(M * M, sizeof(int32_t), d_C, 1, h_C, 1);
+	//cudaMemcpy(h_C, d_C, sizeof(int) * M * M, cudaMemcpyDeviceToHost);
 
-	// 传递进矩阵相乘函数中的参数，具体含义请参考函数手册。
-	float a = 1.0;
-	float b = 0;
-	// 矩阵相乘。该函数必然将数组解析成列优先数组
-	cublasSgemm(
-		handle,		 // blas 库对象
-		CUBLAS_OP_T, // 矩阵 A 属性参数
-		CUBLAS_OP_T, // 矩阵 B 属性参数
-		M,			 // A, C 的行数
-		M,			 // B, C 的列数
-		N,			 // A 的列数和 B 的行数
-		&a,			 // 运算式的 α 值
-		d_A,		 // A 在显存中的地址
-		N,			 // lda
-		d_B,		 // B 在显存中的地址
-		M,			 // ldb
-		&b,			 // 运算式的 β 值
-		d_C,		 // C 在显存中的地址(结果矩阵)
-		M			 // ldc
-	);
-	cublasGemmEx(handle,		   //句柄
-				 CUBLAS_OP_T,	  //矩阵 A 属性参数
-				 CUBLAS_OP_T,	  //矩阵 B 属性参数
-				 M,				   //A, C 的行数
-				 M,				   //B, C 的列数
-				 N,				   //A 的列数和 B 的行数
-				 &a,			   //运算式的 α 值
-				 d_A,			   //A矩阵
-				 CUDA_R_8I,		   //A矩阵计算模式，int8型
-				 N,				   //A矩阵的列数
-				 d_B,			   //B矩阵
-				 CUDA_R_8I,		   //B矩阵计算模式，int8型
-				 M,				   //B矩阵的行数
-				 &b,			   //乘法因子beta
-				 d_C,			   //C结果矩阵
-				 CUDA_R_32I,	   //C矩阵计算模式，int32型
-				 M,				   //C矩阵的行数
-				 CUDA_R_32I,	   //计算模式，int32模式
-				 CUBLAS_GEMM_ALGO0 //算法参数
-				 )
+	cout << "C:" << endl;
+	Display<int32_t>(h_C, M, M);
 
-		// 同步函数
-		cudaDeviceSynchronize();
-
-	// 从 显存 中取出运算结果至 内存中去
-	cublasGetVector(
-		M * M,		 //  要取出元素的个数
-		sizeof(int), // 每个元素大小
-		d_C,		 // GPU 端起始地址
-		1,			 // 连续元素之间的存储间隔
-		h_C,		 // 主机端起始地址
-		1			 // 连续元素之间的存储间隔
-	);
-
-	//或使用cudaMemcpy(h_C, d_C, sizeof(int)*M*M, cudaMemcpyDeviceToHost);
-	// 打印运算结果
-	cout << "计算结果的转置 ( (A*B)的转置 )：" << endl;
-
-	for (int i = 0; i < M * M; i++)
-	{
-		cout << h_C[i] << " ";
-		if ((i + 1) % M == 0)
-			cout << endl;
-	}
-
-	//注意，这里需要进行归一化操作，乘出来的矩阵需要除以128*128，以还原原来的大小。在此就省略这一步。
-	// 清理掉使用过的内存
 	free(h_C);
 	free(h_B);
 	free(h_A);
-	free(f_B);
-	free(f_A);
-
-	try
-	{
-		cudaFree(d_A);
-		cudaFree(d_B);
-		cudaFree(d_C);
-	}
-	catch (...)
-	{
-		cout << "cudaFree Error!" << endl;
-		// 释放 CUBLAS 库对象
-	}
+	cudaFree(d_A);
+	cudaFree(d_B);
+	cudaFree(d_C);
 
 	cublasDestroy(handle);
-	*/
 	return 0;
 }

@@ -30,7 +30,8 @@ using namespace std;
 * 	float *C, int ldc);		 // Line of C. C: m * n.
 */
 
-void Display(float *array, int row, int col)
+template <typename T>
+void Display(T *array, int row, int col)
 {
 	for (int i = 0; i < row * col; i++)
 	{
@@ -53,9 +54,9 @@ int main()
 		h_B[i] = (float)(rand() % 5);
 
 	cout << "A:" << endl;
-	Display(h_A, M, L);
+	Display<float>(h_A, M, L);
 	cout << "B:" << endl;
-	Display(h_B, L, N);
+	Display<float>(h_B, L, N);
 
 	cublasHandle_t handle;
 	cublasStatus_t status = cublasCreate(&handle);
@@ -80,18 +81,19 @@ int main()
 	//cudaMemcpy(d_B, h_B, sizeof(float) * N * M, cudaMemcpyHostToDevice);
 	cudaDeviceSynchronize();
 
-	float a = 1., b = 0.;
+	float alpha = 1., beta = 0.;
 	cublasSgemm(handle, CUBLAS_OP_T, CUBLAS_OP_T,
 				M, N, L,
-				&a,
+				&alpha,
 				d_A, L, d_B, N,
-				&b,
+				&beta,
 				d_C, M);
 	cudaDeviceSynchronize();
 	cublasGetVector(M * N, sizeof(float), d_C, 1, h_C, 1);
+	cudaMemcpy(h_C, d_C, sizeof(float) * M * N, cudaMemcpyDeviceToHost);
 
 	cout << "C:" << endl;
-	Display(h_C, N, M);
+	Display<float>(h_C, N, M);
 
 	free(h_A);
 	free(h_B);
