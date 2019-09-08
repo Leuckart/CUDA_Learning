@@ -8,6 +8,8 @@
 
 #include "cuda_runtime.h"
 #include "cublas_v2.h"
+#include <stdint.h>
+#include <stdlib.h>
 #include <iostream>
 #include <math.h>
 
