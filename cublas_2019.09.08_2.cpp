@@ -15,9 +15,9 @@
 
 using namespace std;
 
-#define M 2
-#define N 2
-#define BYTE 128
+#define M 8
+#define L 4
+#define N 12
 
 template <typename T>
 void Display(T *array, int row, int col)
@@ -33,18 +33,17 @@ void Display(T *array, int row, int col)
 
 int main()
 {
-	int8_t *h_A = (int8_t *)malloc(N * M * sizeof(int8_t));
-	int8_t *h_B = (int8_t *)malloc(N * M * sizeof(int8_t));
-	int32_t *h_C = (int32_t *)malloc(M * M * sizeof(int32_t));
+	int8_t *h_A = (int8_t *)malloc(M * L * sizeof(int8_t));
+	int8_t *h_B = (int8_t *)malloc(L * N * sizeof(int8_t));
+	int32_t *h_C = (int32_t *)malloc(M * N * sizeof(int32_t));
 
-	for (int i = 0; i < N * M; i++)
-	{
-		h_A[i] = (int8_t)(rand() % 5);
-		h_B[i] = (int8_t)(rand() % 5);
-	}
-	//cout << h_A[0] << endl;
-	Display(h_A, M, N);
-	Display(h_B, N, M);
+	for (int i = 0; i < M * L; i++)
+		h_A[i] = (int8_t)(rand() % 3);
+	for (int i = 0; i < L * N; i++)
+		h_B[i] = (int8_t)(rand() % 3);
+
+	Display(h_A, M, L);
+	Display(h_B, L, N);
 
 	cublasHandle_t handle;
 	cublasStatus_t status = cublasCreate(&handle);
@@ -60,34 +59,32 @@ int main()
 
 	int8_t *d_A, *d_B;
 	int32_t *d_C;
-	cudaMalloc((void **)&d_A, N * M * sizeof(int8_t));
-	cudaMalloc((void **)&d_B, N * M * sizeof(int8_t));
-	cudaMalloc((void **)&d_C, M * M * sizeof(int32_t));
+	cudaMalloc((void **)&d_A, M * L * sizeof(int8_t));
+	cudaMalloc((void **)&d_B, L * N * sizeof(int8_t));
+	cudaMalloc((void **)&d_C, M * N * sizeof(int32_t));
 
-	cublasSetVector(N * M, sizeof(int8_t), h_A, 1, d_A, 1);
-	cublasSetVector(N * M, sizeof(int8_t), h_B, 1, d_B, 1);
+	cublasSetVector(M * L, sizeof(int8_t), h_A, 1, d_A, 1);
+	cublasSetVector(L * N, sizeof(int8_t), h_B, 1, d_B, 1);
 	//cudaMemcpy(d_A, h_A, sizeof(char) * N * M, cudaMemcpyHostToDevice);
 	//cudaMemcpy(d_B, h_B, sizeof(char) * N * M, cudaMemcpyHostToDevice);
-
 	cudaDeviceSynchronize();
 
-	int8_t a = 1, b = 0;
-	cout << "OK" << endl;
+	int32_t alpha = 1, beta = 0;
 	cublasGemmEx(handle, CUBLAS_OP_T, CUBLAS_OP_T,
-										  M, M, N,
-										  &a,
-										  d_A, CUDA_R_8I, M,
-										  d_B, CUDA_R_8I, N,
-										  &b,
-										  d_C, CUDA_R_32I, M,
-										  CUDA_R_32I,
-										  CUBLAS_GEMM_ALGO0);
+				 M, N, L,
+				 &alpha,
+				 d_A, CUDA_R_8I, L,
+				 d_B, CUDA_R_8I, N,
+				 &beta,
+				 d_C, CUDA_R_32I, M,
+				 CUDA_R_32I,
+				 CUBLAS_GEMM_DEFAULT);
 	cudaDeviceSynchronize();
-	cublasGetVector(M * M, sizeof(int32_t), d_C, 1, h_C, 1);
+	cublasGetVector(M * N, sizeof(int32_t), d_C, 1, h_C, 1);
 	//cudaMemcpy(h_C, d_C, sizeof(int) * M * M, cudaMemcpyDeviceToHost);
 
 	cout << "C:" << endl;
-	Display<int32_t>(h_C, M, M);
+	Display<int32_t>(h_C, N, M);
 
 	free(h_C);
 	free(h_B);
